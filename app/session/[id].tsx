@@ -15,7 +15,7 @@ import {
   type SessionSummary,
 } from '../../src/db/orderRepository';
 import { generateAndShareInvoice } from '../../src/utils/invoiceService';
-import type { Session, OrderWithCustomerAndTurkey } from '../../src/models/types';
+import type { Session, OrderWithCustomerAndTurkey, PortionType, SizePreference } from '../../src/models/types';
 
 export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,7 +24,7 @@ export default function SessionDetailScreen() {
 
   const [session, setSession] = useState<Session | null>(null);
   const [orders, setOrders] = useState<OrderWithCustomerAndTurkey[]>([]);
-  const [summary, setSummary] = useState<SessionSummary>({ totalWeight: 0, totalRevenue: 0, matchedCount: 0 });
+  const [summary, setSummary] = useState<SessionSummary>({ totalWeight: 0, totalRevenue: 0, matchedCount: 0, turkeyCount: 0, orderCount: 0 });
   const [showForm, setShowForm] = useState(false);
 
   const loadData = useCallback(() => {
@@ -35,8 +35,13 @@ export default function SessionDetailScreen() {
 
   useFocusEffect(loadData);
 
-  const handleAddOrder = async (customerId: number, targetWeight: number) => {
-    await createOrder(sessionId, customerId, targetWeight);
+  const handleAddOrder = async (
+    customerId: number,
+    targetWeight: number | null,
+    portionType: PortionType,
+    sizePreference: SizePreference | null
+  ) => {
+    await createOrder(sessionId, customerId, targetWeight, portionType, sizePreference);
     setShowForm(false);
     loadData();
   };
@@ -69,6 +74,7 @@ export default function SessionDetailScreen() {
         slaughterDate: session.date,
         actualWeight: order.actual_weight,
         pricePerKg: session.price_per_kg,
+        portionType: order.portion_type,
       });
       await updateOrderStatus(order.id, 'invoiced');
       loadData();
@@ -131,7 +137,8 @@ export default function SessionDetailScreen() {
         totalWeight={summary.totalWeight}
         totalRevenue={summary.totalRevenue}
         matchedCount={summary.matchedCount}
-        totalOrders={orders.length}
+        turkeyCount={summary.turkeyCount}
+        orderCount={summary.orderCount}
       />
 
       <Text variant="titleMedium" style={styles.sectionTitle}>
@@ -154,6 +161,7 @@ export default function SessionDetailScreen() {
               onGenerateInvoice={() => handleGenerateInvoice(item)}
             />
           )}
+          contentContainerStyle={{ paddingBottom: 80 }}
         />
       )}
 

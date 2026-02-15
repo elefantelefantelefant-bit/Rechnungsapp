@@ -3,6 +3,7 @@ import { Card, Text, IconButton, Chip } from 'react-native-paper';
 import { StyleSheet, View } from 'react-native';
 import type { OrderWithCustomerAndTurkey, Session } from '../models/types';
 import { formatEuro, formatKg } from '../utils/formatters';
+import { SIZE_LABELS, PORTION_LABELS } from '../utils/sizeClassification';
 
 interface Props {
   order: OrderWithCustomerAndTurkey;
@@ -14,7 +15,13 @@ interface Props {
 export default function OrderCard({ order, session, onDelete, onGenerateInvoice }: Props) {
   const isMatched = order.actual_weight != null;
   const isInvoiced = order.status === 'invoiced';
-  const totalPrice = isMatched ? order.actual_weight! * session.price_per_kg : null;
+  const isHalf = order.portion_type === 'half';
+  const billableWeight = isMatched ? (isHalf ? order.actual_weight! / 2 : order.actual_weight!) : null;
+  const totalPrice = billableWeight != null ? billableWeight * session.price_per_kg : null;
+
+  const orderDescription = order.target_weight != null
+    ? `Zielgewicht: ${order.target_weight.toFixed(1)} kg`
+    : `${PORTION_LABELS[order.portion_type]} · ${SIZE_LABELS[order.size_preference!]}`;
 
   return (
     <Card style={styles.card}>
@@ -22,15 +29,18 @@ export default function OrderCard({ order, session, onDelete, onGenerateInvoice 
         <View style={styles.info}>
           <View style={styles.nameRow}>
             <Text variant="titleMedium">{order.customer_name}</Text>
+            {isHalf && (
+              <Chip style={styles.halfChip} textStyle={styles.halfText}>½</Chip>
+            )}
             {isInvoiced && (
               <Chip style={styles.invoicedChip} textStyle={styles.invoicedText}>Berechnet</Chip>
             )}
           </View>
-          <Text variant="bodyMedium">Zielgewicht: {order.target_weight.toFixed(1)} kg</Text>
+          <Text variant="bodyMedium">{orderDescription}</Text>
           {isMatched && (
             <>
               <Text variant="bodyMedium" style={styles.matchedText}>
-                Gewicht: {formatKg(order.actual_weight!)}
+                {isHalf ? `Gewicht (½): ${formatKg(billableWeight!)}` : `Gewicht: ${formatKg(order.actual_weight!)}`}
               </Text>
               <Text variant="bodyMedium" style={styles.priceText}>
                 Betrag: {formatEuro(totalPrice!)}
@@ -77,6 +87,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  halfChip: {
+    backgroundColor: '#E3F2FD',
+    height: 24,
+  },
+  halfText: {
+    fontSize: 10,
+    lineHeight: 14,
   },
   invoicedChip: {
     backgroundColor: '#C8E6C9',

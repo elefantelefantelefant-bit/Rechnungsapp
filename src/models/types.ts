@@ -1,3 +1,6 @@
+export type PortionType = 'whole' | 'half';
+export type SizePreference = 'light' | 'medium' | 'heavy';
+
 export interface Customer {
   id: number;
   name: string;
@@ -17,7 +20,9 @@ export interface Order {
   id: number;
   session_id: number;
   customer_id: number;
-  target_weight: number; // kg
+  target_weight: number | null; // null = category mode
+  portion_type: PortionType;
+  size_preference: SizePreference | null; // null = weight mode
   status: 'pending' | 'matched' | 'invoiced';
   turkey_id: number | null;
   created_at: string;
@@ -27,7 +32,6 @@ export interface Turkey {
   id: number;
   session_id: number;
   actual_weight: number; // kg
-  order_id: number | null;
   created_at: string;
 }
 

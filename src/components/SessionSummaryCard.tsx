@@ -7,11 +7,12 @@ interface Props {
   totalWeight: number;
   totalRevenue: number;
   matchedCount: number;
-  totalOrders: number;
+  turkeyCount: number;
+  orderCount: number;
 }
 
-export default function SessionSummaryCard({ totalWeight, totalRevenue, matchedCount, totalOrders }: Props) {
-  if (matchedCount === 0) return null;
+export default function SessionSummaryCard({ totalWeight, totalRevenue, matchedCount, turkeyCount, orderCount }: Props) {
+  if (turkeyCount === 0 && orderCount === 0) return null;
 
   return (
     <Card style={styles.card}>
@@ -19,18 +20,30 @@ export default function SessionSummaryCard({ totalWeight, totalRevenue, matchedC
         <Text variant="titleMedium" style={styles.title}>Zusammenfassung</Text>
         <View style={styles.row}>
           <View style={styles.stat}>
-            <Text variant="headlineSmall" style={styles.value}>{formatKg(totalWeight)}</Text>
-            <Text variant="bodySmall" style={styles.label}>Gesamtgewicht</Text>
+            <Text variant="headlineSmall" style={styles.value}>{turkeyCount}</Text>
+            <Text variant="bodySmall" style={styles.label}>Puten</Text>
           </View>
           <View style={styles.stat}>
-            <Text variant="headlineSmall" style={styles.value}>{formatEuro(totalRevenue)}</Text>
-            <Text variant="bodySmall" style={styles.label}>Umsatz</Text>
+            <Text variant="headlineSmall" style={styles.value}>{orderCount}</Text>
+            <Text variant="bodySmall" style={styles.label}>Bestellungen</Text>
           </View>
           <View style={styles.stat}>
-            <Text variant="headlineSmall" style={styles.value}>{matchedCount}/{totalOrders}</Text>
+            <Text variant="headlineSmall" style={styles.value}>{matchedCount}/{orderCount}</Text>
             <Text variant="bodySmall" style={styles.label}>Zugeordnet</Text>
           </View>
         </View>
+        {matchedCount > 0 && (
+          <View style={[styles.row, styles.secondRow]}>
+            <View style={styles.stat}>
+              <Text variant="headlineSmall" style={styles.value}>{formatKg(totalWeight)}</Text>
+              <Text variant="bodySmall" style={styles.label}>Gesamtgewicht</Text>
+            </View>
+            <View style={styles.stat}>
+              <Text variant="headlineSmall" style={styles.value}>{formatEuro(totalRevenue)}</Text>
+              <Text variant="bodySmall" style={styles.label}>Umsatz</Text>
+            </View>
+          </View>
+        )}
       </Card.Content>
     </Card>
   );
@@ -49,6 +62,9 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  secondRow: {
+    marginTop: 12,
   },
   stat: {
     alignItems: 'center',

@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { TextInput, Button, Text, Menu } from 'react-native-paper';
+import { TextInput, Button, Text, Menu, SegmentedButtons } from 'react-native-paper';
 import { getAllCustomers } from '../db/customerRepository';
-import type { Customer } from '../models/types';
+import type { Customer, PortionType, SizePreference } from '../models/types';
+
+type OrderMode = 'weight' | 'category';
 
 interface Props {
-  onSubmit: (customerId: number, targetWeight: number) => void;
+  onSubmit: (
+    customerId: number,
+    targetWeight: number | null,
+    portionType: PortionType,
+    sizePreference: SizePreference | null
+  ) => void;
   onCancel: () => void;
 }
 
@@ -16,6 +23,10 @@ export default function OrderForm({ onSubmit, onCancel }: Props) {
   const [weight, setWeight] = useState('');
   const [customerError, setCustomerError] = useState('');
   const [weightError, setWeightError] = useState('');
+
+  const [mode, setMode] = useState<OrderMode>('category');
+  const [portionType, setPortionType] = useState<PortionType>('whole');
+  const [sizePreference, setSizePreference] = useState<SizePreference>('medium');
 
   useEffect(() => {
     getAllCustomers().then(setCustomers);
@@ -31,22 +42,39 @@ export default function OrderForm({ onSubmit, onCancel }: Props) {
       setCustomerError('');
     }
 
-    const parsedWeight = parseFloat(weight.replace(',', '.'));
-    if (isNaN(parsedWeight) || parsedWeight <= 0) {
-      setWeightError('Gültiges Gewicht eingeben');
-      valid = false;
+    if (mode === 'weight') {
+      const parsedWeight = parseFloat(weight.replace(',', '.'));
+      if (isNaN(parsedWeight) || parsedWeight <= 0) {
+        setWeightError('Gültiges Gewicht eingeben');
+        valid = false;
+      } else {
+        setWeightError('');
+      }
+
+      if (valid && selectedCustomer) {
+        onSubmit(selectedCustomer.id, parsedWeight, 'whole', null);
+      }
     } else {
       setWeightError('');
-    }
-
-    if (valid && selectedCustomer) {
-      onSubmit(selectedCustomer.id, parsedWeight);
+      if (valid && selectedCustomer) {
+        onSubmit(selectedCustomer.id, null, portionType, sizePreference);
+      }
     }
   };
 
   return (
     <View style={styles.container}>
       <Text variant="titleLarge" style={styles.title}>Bestellung hinzufügen</Text>
+
+      <SegmentedButtons
+        value={mode}
+        onValueChange={(v) => setMode(v as OrderMode)}
+        buttons={[
+          { value: 'category', label: 'Kategorie' },
+          { value: 'weight', label: 'Gewicht' },
+        ]}
+        style={styles.modeToggle}
+      />
 
       <Menu
         visible={menuVisible}
@@ -79,16 +107,45 @@ export default function OrderForm({ onSubmit, onCancel }: Props) {
       </Menu>
       {customerError ? <Text style={styles.error}>{customerError}</Text> : null}
 
-      <TextInput
-        label="Zielgewicht (kg)"
-        value={weight}
-        onChangeText={setWeight}
-        keyboardType="decimal-pad"
-        placeholder="z.B. 7,0"
-        style={styles.input}
-        error={!!weightError}
-      />
-      {weightError ? <Text style={styles.error}>{weightError}</Text> : null}
+      {mode === 'weight' ? (
+        <>
+          <TextInput
+            label="Zielgewicht (kg)"
+            value={weight}
+            onChangeText={setWeight}
+            keyboardType="decimal-pad"
+            placeholder="z.B. 7,0"
+            style={styles.input}
+            error={!!weightError}
+          />
+          {weightError ? <Text style={styles.error}>{weightError}</Text> : null}
+        </>
+      ) : (
+        <>
+          <Text variant="labelLarge" style={styles.sectionLabel}>Portion</Text>
+          <SegmentedButtons
+            value={portionType}
+            onValueChange={(v) => setPortionType(v as PortionType)}
+            buttons={[
+              { value: 'whole', label: 'Ganz' },
+              { value: 'half', label: 'Halb' },
+            ]}
+            style={styles.segmented}
+          />
+
+          <Text variant="labelLarge" style={styles.sectionLabel}>Größe</Text>
+          <SegmentedButtons
+            value={sizePreference}
+            onValueChange={(v) => setSizePreference(v as SizePreference)}
+            buttons={[
+              { value: 'light', label: 'Leicht' },
+              { value: 'medium', label: 'Mittel' },
+              { value: 'heavy', label: 'Schwer' },
+            ]}
+            style={styles.segmented}
+          />
+        </>
+      )}
 
       <View style={styles.buttons}>
         <Button mode="outlined" onPress={onCancel} style={styles.button}>
@@ -109,6 +166,9 @@ const styles = StyleSheet.create({
   title: {
     marginBottom: 16,
   },
+  modeToggle: {
+    marginBottom: 16,
+  },
   dropdown: {
     marginBottom: 8,
     justifyContent: 'flex-start',
@@ -118,6 +178,14 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 8,
+  },
+  sectionLabel: {
+    marginTop: 12,
+    marginBottom: 6,
+    color: '#5D4037',
+  },
+  segmented: {
+    marginBottom: 4,
   },
   error: {
     color: '#B00020',

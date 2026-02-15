@@ -29,6 +29,15 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="invoice"
+        options={{
+          title: 'Rechnung',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="file-document-edit-outline" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
